@@ -5,11 +5,13 @@ INSERT INTO journal_entries (
     date,
     description,
     reference_number,
+    status,
     reference_asset_id
 ) VALUES (
     '2023-05-25',
     'Monthly Salary from Evil Corp.',
     'SAL-2023-05',
+    'POSTED',
     (SELECT id FROM assets WHERE code = 'USD')
 );
 

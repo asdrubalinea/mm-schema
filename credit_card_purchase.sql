@@ -4,11 +4,13 @@ INSERT INTO journal_entries (
     date,
     description,
     reference_number,
+    status,
     reference_asset_id
 ) VALUES (
     '2023-05-26',
     'Grocery shopping at Whole Foods',
     'CC-2023-05-26',
+    'POSTED',
     (SELECT id FROM assets WHERE code = 'USD')
 );
 

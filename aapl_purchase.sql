@@ -18,11 +18,13 @@ INSERT INTO journal_entries (
     date,
     description,
     reference_number,
+    status,
     reference_asset_id
 ) VALUES (
     '2023-06-15',
     'Purchase AAPL shares',
     'INV-2023-06-15',
+    'POSTED',
     (SELECT id FROM assets WHERE code = 'USD')  -- Using USD as reference currency
 );
 
