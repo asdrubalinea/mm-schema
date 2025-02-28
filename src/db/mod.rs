@@ -22,7 +22,7 @@ impl Database {
     }
 
     pub fn init_schema(&self) -> Result<()> {
-        self.conn.execute_batch(include_str!("../schema.sql"))?;
+        self.conn.execute_batch(include_str!("../sql/schema.sql"))?;
         Ok(())
     }
 
@@ -113,5 +113,4 @@ impl Database {
 
         Ok(id)
     }
-
 }

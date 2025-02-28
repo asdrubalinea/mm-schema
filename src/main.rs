@@ -10,9 +10,9 @@ fn main() -> error::Result<()> {
 
     db.init_schema()?;
     // Seed with sample data
-    db.init_sample_data()?;
+    // db.init_sample_data()?;
 
-    println!("Database initialized with sample data");
+    // println!("Database initialized with sample data");
 
     Ok(())
 }

@@ -1,11 +1,7 @@
 use super::*;
 use chrono::NaiveDate;
 
-const SAMPLE_ACCOUNT_TYPES: [(
-    &str,
-    NormalBalance,
-    Option<&str>,
-); 5] = [
+const SAMPLE_ACCOUNT_TYPES: [(&str, NormalBalance, Option<&str>); 5] = [
     (
         "Asset",
         NormalBalance::Debit,
@@ -25,23 +21,20 @@ const SAMPLE_ACCOUNT_TYPES: [(
     ("Expense", NormalBalance::Debit, Some("Costs and losses")),
 ];
 
-const SAMPLE_ASSETS: [(
-    &str,
-    &str,
-    AssetType,
-    i64,
-    Option<&str>,
-); 4] = [
+const SAMPLE_ASSETS: [(&str, &str, AssetType, i64, Option<&str>); 6] = [
     ("USD", "US Dollar", AssetType::Fiat, 2, None),
     ("EUR", "Euro", AssetType::Fiat, 2, None),
     ("AAPL", "Apple Inc.", AssetType::Stock, 8, None),
+    ("AAPL", "VWCE", AssetType::Etf, 8, None),
     ("ETH", "Ethereum", AssetType::Crypto, 18, None),
+    ("BTC", "Bitcoin", AssetType::Crypto, 18, None),
 ];
 
 fn init_account_types(db: &Database) -> Result<()> {
     for (name, normal_balance, description) in SAMPLE_ACCOUNT_TYPES {
         db.create_account_type(name, normal_balance, description)?;
     }
+
     Ok(())
 }
 
@@ -53,8 +46,7 @@ fn init_assets(db: &Database) -> Result<()> {
 }
 
 fn init_asset_accounts(db: &Database, opening_date: NaiveDate) -> Result<i64> {
-    let assets_id =
-        db.create_account("1000", "Assets", 1, None, true, opening_date, None, None)?;
+    let assets_id = db.create_account("1000", "Assets", 1, None, true, opening_date, None, None)?;
 
     // Cash and Bank accounts
     let cash_bank_id = db.create_account(
@@ -200,13 +192,9 @@ fn init_liability_accounts(db: &Database, opening_date: NaiveDate) -> Result<i64
 }
 
 fn init_equity_accounts(db: &Database, opening_date: NaiveDate) -> Result<i64> {
-    let equity_id =
-        db.create_account("3000", "Equity", 3, None, true, opening_date, None, None)?;
+    let equity_id = db.create_account("3000", "Equity", 3, None, true, opening_date, None, None)?;
 
-    for (number, name) in [
-        ("3100", "Opening Balance"),
-        ("3200", "Retained Earnings"),
-    ] {
+    for (number, name) in [("3100", "Opening Balance"), ("3200", "Retained Earnings")] {
         db.create_account(
             number,
             name,
@@ -223,8 +211,7 @@ fn init_equity_accounts(db: &Database, opening_date: NaiveDate) -> Result<i64> {
 }
 
 fn init_income_accounts(db: &Database, opening_date: NaiveDate) -> Result<i64> {
-    let income_id =
-        db.create_account("4000", "Income", 4, None, true, opening_date, None, None)?;
+    let income_id = db.create_account("4000", "Income", 4, None, true, opening_date, None, None)?;
 
     db.create_account(
         "4100",
@@ -429,7 +416,7 @@ fn init_sample_data(db: &Database) -> Result<()> {
     init_assets(db)?;
 
     let opening_date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-    
+
     init_asset_accounts(db, opening_date)?;
     init_liability_accounts(db, opening_date)?;
     init_equity_accounts(db, opening_date)?;
@@ -485,7 +472,7 @@ fn test_create_account() -> Result<()> {
     )?;
 
     let opening_date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-    
+
     let id = db.create_account(
         "1000",
         "Test Account",
@@ -505,7 +492,7 @@ fn test_create_account() -> Result<()> {
 fn test_init_sample_data() -> Result<()> {
     let db = Database::new_in_memory()?;
     db.init_schema()?;
-    
+
     init_sample_data(&db)?;
 
     // Verify some sample data was created
