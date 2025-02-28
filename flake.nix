@@ -16,6 +16,8 @@
           buildInputs = with pkgs; [
             sqlite
             sqlitebrowser
+
+            aider-chat
           ];
 
           shellHook = ''
