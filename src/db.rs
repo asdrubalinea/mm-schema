@@ -1,9 +1,7 @@
-use crate::{
-    error::{Result},
-    models::*,
-};
 use chrono::NaiveDate;
-use rusqlite::{params, Connection, types::ToSql};
+use rusqlite::{params, Connection, Result};
+
+use crate::models::{AssetType, NormalBalance};
 
 pub struct Database {
     conn: Connection,
@@ -15,7 +13,7 @@ impl Database {
         Ok(Self { conn })
     }
 
-    pub fn in_memory() -> Result<Self> {
+    pub fn new_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;
         Ok(Self { conn })
     }
