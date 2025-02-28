@@ -1,3 +1,4 @@
 *.db
 .aider*
 .direnv/
+target
