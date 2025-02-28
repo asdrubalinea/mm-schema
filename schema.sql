@@ -71,14 +71,3 @@ CREATE TABLE journal_entry_lines (
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     FOREIGN KEY (asset_id) REFERENCES assets(id)
 );
-
--- Account Balances
-CREATE TABLE account_balances (
-    account_id INTEGER NOT NULL,
-    asset_id INTEGER NOT NULL,
-    amount DECIMAL(19,8) NOT NULL,
-    last_updated DATETIME NOT NULL,
-    FOREIGN KEY (account_id) REFERENCES accounts(id),
-    FOREIGN KEY (asset_id) REFERENCES assets(id),
-    PRIMARY KEY (account_id, asset_id)
-);
