@@ -22,31 +22,10 @@ CREATE TABLE accounts (
     FOREIGN KEY (parent_account_id) REFERENCES accounts(id)
 );
 
--- Fiscal Years
-CREATE TABLE fiscal_years (
-    id INTEGER PRIMARY KEY,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    is_closed BOOLEAN DEFAULT false,
-    UNIQUE(start_date, end_date)
-);
-
--- Fiscal Periods
-CREATE TABLE fiscal_periods (
-    id INTEGER PRIMARY KEY,
-    fiscal_year_id INTEGER NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    period_number INTEGER NOT NULL,
-    is_closed BOOLEAN DEFAULT false,
-    FOREIGN KEY (fiscal_year_id) REFERENCES fiscal_years(id),
-    UNIQUE(fiscal_year_id, period_number)
-);
-
 -- Journal Types
 CREATE TABLE journal_types (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE, -- General, Adjusting, Closing
+    name TEXT NOT NULL UNIQUE, -- General, Adjustment
     description TEXT
 );
 
@@ -54,16 +33,13 @@ CREATE TABLE journal_types (
 CREATE TABLE journal_entries (
     id INTEGER PRIMARY KEY,
     journal_type_id INTEGER NOT NULL,
-    fiscal_period_id INTEGER NOT NULL,
     date DATETIME NOT NULL,
     description TEXT NOT NULL,
     reference_number TEXT,
     status TEXT CHECK(status IN ('DRAFT', 'POSTED', 'VOID')) DEFAULT 'DRAFT',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     posted_at DATETIME,
-    voided_at DATETIME,
-    FOREIGN KEY (journal_type_id) REFERENCES journal_types(id),
-    FOREIGN KEY (fiscal_period_id) REFERENCES fiscal_periods(id)
+    FOREIGN KEY (journal_type_id) REFERENCES journal_types(id)
 );
 
 -- Journal Entry Lines
@@ -83,41 +59,44 @@ CREATE TABLE journal_entry_lines (
     FOREIGN KEY (security_id) REFERENCES securities(id)
 );
 
--- Trial Balance
-CREATE TABLE trial_balances (
-    id INTEGER PRIMARY KEY,
-    fiscal_period_id INTEGER NOT NULL,
-    account_id INTEGER NOT NULL,
-    debit_balance DECIMAL(19,4) NOT NULL DEFAULT 0,
-    credit_balance DECIMAL(19,4) NOT NULL DEFAULT 0,
-    calculated_at DATETIME NOT NULL,
-    FOREIGN KEY (fiscal_period_id) REFERENCES fiscal_periods(id),
-    FOREIGN KEY (account_id) REFERENCES accounts(id)
-);
-
--- Securities (unchanged from previous)
+-- Securities
 CREATE TABLE securities (
     id INTEGER PRIMARY KEY,
     symbol TEXT NOT NULL,
     name TEXT NOT NULL,
-    security_type TEXT NOT NULL,
+    security_type TEXT NOT NULL, -- stock, bond, mutual fund, etc.
     description TEXT,
     UNIQUE(symbol)
 );
 
--- Audit Trail
-CREATE TABLE audit_log (
-    id INTEGER PRIMARY KEY,
-    table_name TEXT NOT NULL,
-    record_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    old_values TEXT,
-    new_values TEXT,
-    user_id INTEGER,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+-- Account Balances (for performance optimization)
+CREATE TABLE account_balances (
+    account_id INTEGER NOT NULL,
+    security_id INTEGER,
+    balance DECIMAL(19,4) NOT NULL,
+    quantity DECIMAL(19,4), -- for investment accounts
+    last_updated DATETIME NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES accounts(id),
+    FOREIGN KEY (security_id) REFERENCES securities(id),
+    PRIMARY KEY (account_id, security_id)
 );
 
--- Triggers for maintaining data integrity
+-- Tags for transactions
+CREATE TABLE tags (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
+-- Junction table for journal entries and tags
+CREATE TABLE journal_entry_tags (
+    journal_entry_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id),
+    PRIMARY KEY (journal_entry_id, tag_id)
+);
+
+-- Trigger to ensure balanced entries
 CREATE TRIGGER enforce_balanced_entry
 AFTER INSERT ON journal_entry_lines
 BEGIN
@@ -134,8 +113,7 @@ BEGIN
     END;
 END;
 
--- Indexes
-CREATE INDEX idx_journal_entries_period ON journal_entries(fiscal_period_id);
+-- Indexes for better performance
 CREATE INDEX idx_journal_entries_date ON journal_entries(date);
 CREATE INDEX idx_journal_entry_lines_entry ON journal_entry_lines(journal_entry_id);
 CREATE INDEX idx_accounts_number ON accounts(account_number);
