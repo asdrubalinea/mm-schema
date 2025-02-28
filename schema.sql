@@ -11,7 +11,7 @@ CREATE TABLE assets (
     id INTEGER PRIMARY KEY,
     code TEXT NOT NULL UNIQUE,      -- USD, EUR, AAPL, ETH, etc.
     name TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('FIAT', 'STOCK', 'CRYPTO', 'COMMODITY')),
+    type TEXT NOT NULL CHECK(type IN ('FIAT', 'STOCK', 'BOND', 'ETF', 'ETC', 'ETN', 'CRYPTO', 'COMMODITY')),
     decimals INTEGER NOT NULL,      -- 2 for USD, 8 for BTC, etc.
     description TEXT
 );
