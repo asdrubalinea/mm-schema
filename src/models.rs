@@ -2,6 +2,10 @@ use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
+/// Represents a type of account in the accounting system
+/// 
+/// Account types define the basic categories of accounts (e.g., Asset, Liability, Equity)
+/// and their normal balance behavior (debit or credit).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountType {
     pub id: i64,
@@ -10,6 +14,10 @@ pub struct AccountType {
     pub description: Option<String>,
 }
 
+/// Represents a financial asset or currency in the system
+/// 
+/// Assets can be various types like fiat currencies, stocks, cryptocurrencies,
+/// or commodities, each with their own decimal precision requirements.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Asset {
     pub id: i64,
@@ -20,6 +28,10 @@ pub struct Asset {
     pub description: Option<String>,
 }
 
+/// Represents an exchange rate between two assets at a specific point in time
+/// 
+/// Used for currency conversion and asset value calculations in transactions
+/// involving multiple currencies or assets.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExchangeRate {
     pub id: i64,
@@ -29,6 +41,10 @@ pub struct ExchangeRate {
     pub date: DateTime<Utc>,
 }
 
+/// Represents an individual account in the chart of accounts
+/// 
+/// Accounts are hierarchical (can have parent accounts) and track financial activity
+/// for specific purposes. They can be activated or deactivated over time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     pub id: i64,
@@ -42,6 +58,11 @@ pub struct Account {
     pub description: Option<String>,
 }
 
+/// Represents a journal entry in the accounting system
+/// 
+/// A journal entry is a record of a financial transaction that includes
+/// multiple line items affecting different accounts. It maintains its status
+/// (draft, posted, or void) and reference information.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JournalEntry {
     pub id: i64,
@@ -53,6 +74,10 @@ pub struct JournalEntry {
     pub created_at: DateTime<Utc>,
 }
 
+/// Represents a single line item within a journal entry
+/// 
+/// Each line specifies an account, asset, amount, and whether it's a debit or credit.
+/// It can include exchange rate information for multi-currency transactions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JournalEntryLine {
     pub id: i64,
@@ -67,6 +92,10 @@ pub struct JournalEntryLine {
     pub description: Option<String>,
 }
 
+/// Represents the normal balance type of an account
+/// 
+/// In accounting, accounts naturally maintain either a debit or credit balance.
+/// This determines how increases and decreases affect the account balance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum NormalBalance {
@@ -74,6 +103,10 @@ pub enum NormalBalance {
     Credit,
 }
 
+/// Categorizes different types of assets in the system
+/// 
+/// Each asset type may have different handling requirements for
+/// valuation, exchange rates, and transaction processing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum AssetType {
@@ -83,6 +116,11 @@ pub enum AssetType {
     Commodity,
 }
 
+/// Represents the current status of a journal entry
+/// 
+/// - Draft: Entry is still being prepared
+/// - Posted: Entry has been finalized and affects account balances
+/// - Void: Entry has been invalidated but remains in the system for audit purposes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum EntryStatus {
