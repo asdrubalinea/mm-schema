@@ -1,10 +1,9 @@
 use crate::{
-    error::{Error, Result},
+    error::{Result},
     models::*,
 };
-use chrono::{DateTime, NaiveDate, Utc};
-use rusqlite::{params, Connection};
-use rust_decimal::Decimal;
+use chrono::NaiveDate;
+use rusqlite::{params, Connection, types::ToSql};
 
 pub struct Database {
     conn: Connection,

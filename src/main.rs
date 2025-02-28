@@ -1,9 +1,9 @@
 mod models;
 mod error;
 mod db;
+mod types;
 
 use crate::db::Database;
-use crate::models::*;
 
 fn main() -> error::Result<()> {
     // Example usage
