@@ -111,53 +111,62 @@ impl Database {
         Ok(id)
     }
 
-    pub fn init_sample_data(&self) -> Result<()> {
-        self.conn.execute("BEGIN TRANSACTION", [])?;
+    const SAMPLE_ACCOUNT_TYPES: [(
+        &'static str,
+        NormalBalance,
+        Option<&'static str>,
+    ); 5] = [
+        (
+            "Asset",
+            NormalBalance::Debit,
+            Some("Resources owned by the entity"),
+        ),
+        (
+            "Liability",
+            NormalBalance::Credit,
+            Some("Debts and obligations"),
+        ),
+        (
+            "Equity",
+            NormalBalance::Credit,
+            Some("Net worth and capital"),
+        ),
+        ("Income", NormalBalance::Credit, Some("Revenue and gains")),
+        ("Expense", NormalBalance::Debit, Some("Costs and losses")),
+    ];
 
-        // Initialize Account Types
-        let account_types = [
-            (
-                "Asset",
-                NormalBalance::Debit,
-                Some("Resources owned by the entity"),
-            ),
-            (
-                "Liability",
-                NormalBalance::Credit,
-                Some("Debts and obligations"),
-            ),
-            (
-                "Equity",
-                NormalBalance::Credit,
-                Some("Net worth and capital"),
-            ),
-            ("Income", NormalBalance::Credit, Some("Revenue and gains")),
-            ("Expense", NormalBalance::Debit, Some("Costs and losses")),
-        ];
+    const SAMPLE_ASSETS: [(
+        &'static str,
+        &'static str,
+        AssetType,
+        i64,
+        Option<&'static str>,
+    ); 4] = [
+        ("USD", "US Dollar", AssetType::Fiat, 2, None),
+        ("EUR", "Euro", AssetType::Fiat, 2, None),
+        ("AAPL", "Apple Inc.", AssetType::Stock, 8, None),
+        ("ETH", "Ethereum", AssetType::Crypto, 18, None),
+    ];
 
-        for (name, normal_balance, description) in account_types {
+    fn init_account_types(&self) -> Result<()> {
+        for (name, normal_balance, description) in Self::SAMPLE_ACCOUNT_TYPES {
             self.create_account_type(name, normal_balance, description)?;
         }
+        Ok(())
+    }
 
-        // Initialize Assets
-        let assets = [
-            ("USD", "US Dollar", AssetType::Fiat, 2, None),
-            ("EUR", "Euro", AssetType::Fiat, 2, None),
-            ("AAPL", "Apple Inc.", AssetType::Stock, 8, None),
-            ("ETH", "Ethereum", AssetType::Crypto, 18, None),
-        ];
-
-        for (code, name, asset_type, decimals, description) in assets {
+    fn init_assets(&self) -> Result<()> {
+        for (code, name, asset_type, decimals, description) in Self::SAMPLE_ASSETS {
             self.create_asset(code, name, asset_type, decimals, description)?;
         }
+        Ok(())
+    }
 
-        // Initialize Accounts
-        let opening_date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-
-        // Asset Accounts (1000-1999)
+    fn init_asset_accounts(&self, opening_date: NaiveDate) -> Result<i64> {
         let assets_id =
             self.create_account("1000", "Assets", 1, None, true, opening_date, None, None)?;
 
+        // Cash and Bank accounts
         let cash_bank_id = self.create_account(
             "1100",
             "Cash and Bank",
@@ -168,37 +177,24 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "1101",
-            "Main Checking Account",
-            1,
-            Some(cash_bank_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "1102",
-            "Savings Account",
-            1,
-            Some(cash_bank_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "1103",
-            "Cash Wallet",
-            1,
-            Some(cash_bank_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [
+            ("1101", "Main Checking Account"),
+            ("1102", "Savings Account"),
+            ("1103", "Cash Wallet"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                1,
+                Some(cash_bank_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
+        // Investment accounts
         let investment_id = self.create_account(
             "1200",
             "Investment Accounts",
@@ -209,27 +205,23 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "1201",
-            "Stock Brokerage Account",
-            1,
-            Some(investment_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "1202",
-            "Crypto Wallet",
-            1,
-            Some(investment_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [
+            ("1201", "Stock Brokerage Account"),
+            ("1202", "Crypto Wallet"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                1,
+                Some(investment_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
+        // Fixed assets
         let fixed_assets_id = self.create_account(
             "1300",
             "Fixed Assets",
@@ -240,28 +232,23 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "1301",
-            "House",
-            1,
-            Some(fixed_assets_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "1302",
-            "Vehicle",
-            1,
-            Some(fixed_assets_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [("1301", "House"), ("1302", "Vehicle")] {
+            self.create_account(
+                number,
+                name,
+                1,
+                Some(fixed_assets_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
-        // Liability Accounts (2000-2999)
+        Ok(assets_id)
+    }
+
+    fn init_liability_accounts(&self, opening_date: NaiveDate) -> Result<i64> {
         let liabilities_id = self.create_account(
             "2000",
             "Liabilities",
@@ -273,6 +260,7 @@ impl Database {
             None,
         )?;
 
+        // Credit cards
         let credit_cards_id = self.create_account(
             "2100",
             "Credit Cards",
@@ -294,6 +282,7 @@ impl Database {
             None,
         )?;
 
+        // Loans
         let loans_id = self.create_account(
             "2200",
             "Loans",
@@ -304,54 +293,49 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "2201",
-            "Mortgage",
-            2,
-            Some(loans_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "2202",
-            "Car Loan",
-            2,
-            Some(loans_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [("2201", "Mortgage"), ("2202", "Car Loan")] {
+            self.create_account(
+                number,
+                name,
+                2,
+                Some(loans_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
-        // Equity Accounts (3000-3999)
+        Ok(liabilities_id)
+    }
+
+    fn init_equity_accounts(&self, opening_date: NaiveDate) -> Result<i64> {
         let equity_id =
             self.create_account("3000", "Equity", 3, None, true, opening_date, None, None)?;
-        self.create_account(
-            "3100",
-            "Opening Balance",
-            3,
-            Some(equity_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "3200",
-            "Retained Earnings",
-            3,
-            Some(equity_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
 
-        // Income Accounts (4000-4999)
+        for (number, name) in [
+            ("3100", "Opening Balance"),
+            ("3200", "Retained Earnings"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                3,
+                Some(equity_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
+
+        Ok(equity_id)
+    }
+
+    fn init_income_accounts(&self, opening_date: NaiveDate) -> Result<i64> {
         let income_id =
             self.create_account("4000", "Income", 4, None, true, opening_date, None, None)?;
+
         self.create_account(
             "4100",
             "Salary",
@@ -373,36 +357,23 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "4201",
-            "Dividends",
-            4,
-            Some(investment_income_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "4202",
-            "Capital Gains",
-            4,
-            Some(investment_income_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "4203",
-            "Interest Income",
-            4,
-            Some(investment_income_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+
+        for (number, name) in [
+            ("4201", "Dividends"),
+            ("4202", "Capital Gains"),
+            ("4203", "Interest Income"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                4,
+                Some(investment_income_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
         self.create_account(
             "4300",
@@ -415,10 +386,14 @@ impl Database {
             None,
         )?;
 
-        // Expense Accounts (5000-5999)
+        Ok(income_id)
+    }
+
+    fn init_expense_accounts(&self, opening_date: NaiveDate) -> Result<i64> {
         let expenses_id =
             self.create_account("5000", "Expenses", 5, None, true, opening_date, None, None)?;
 
+        // Housing expenses
         let housing_id = self.create_account(
             "5100",
             "Housing",
@@ -429,37 +404,24 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "5101",
-            "Rent/Mortgage Payment",
-            5,
-            Some(housing_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5102",
-            "Utilities",
-            5,
-            Some(housing_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5103",
-            "Maintenance",
-            5,
-            Some(housing_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [
+            ("5101", "Rent/Mortgage Payment"),
+            ("5102", "Utilities"),
+            ("5103", "Maintenance"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                5,
+                Some(housing_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
+        // Transportation expenses
         let transport_id = self.create_account(
             "5200",
             "Transportation",
@@ -470,37 +432,24 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "5201",
-            "Fuel",
-            5,
-            Some(transport_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5202",
-            "Car Maintenance",
-            5,
-            Some(transport_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5203",
-            "Public Transport",
-            5,
-            Some(transport_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [
+            ("5201", "Fuel"),
+            ("5202", "Car Maintenance"),
+            ("5203", "Public Transport"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                5,
+                Some(transport_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
+        // Living expenses
         let living_id = self.create_account(
             "5300",
             "Living",
@@ -511,37 +460,24 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "5301",
-            "Groceries",
-            5,
-            Some(living_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5302",
-            "Restaurants",
-            5,
-            Some(living_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5303",
-            "Healthcare",
-            5,
-            Some(living_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [
+            ("5301", "Groceries"),
+            ("5302", "Restaurants"),
+            ("5303", "Healthcare"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                5,
+                Some(living_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
+        // Entertainment expenses
         let entertainment_id = self.create_account(
             "5400",
             "Entertainment",
@@ -552,27 +488,20 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "5401",
-            "Streaming Services",
-            5,
-            Some(entertainment_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5402",
-            "Hobbies",
-            5,
-            Some(entertainment_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [("5401", "Streaming Services"), ("5402", "Hobbies")] {
+            self.create_account(
+                number,
+                name,
+                5,
+                Some(entertainment_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
 
+        // Financial expenses
         let financial_id = self.create_account(
             "5500",
             "Financial Expenses",
@@ -583,36 +512,39 @@ impl Database {
             None,
             None,
         )?;
-        self.create_account(
-            "5501",
-            "Bank Fees",
-            5,
-            Some(financial_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5502",
-            "Credit Card Interest",
-            5,
-            Some(financial_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
-        self.create_account(
-            "5503",
-            "Investment Fees",
-            5,
-            Some(financial_id),
-            true,
-            opening_date,
-            None,
-            None,
-        )?;
+        for (number, name) in [
+            ("5501", "Bank Fees"),
+            ("5502", "Credit Card Interest"),
+            ("5503", "Investment Fees"),
+        ] {
+            self.create_account(
+                number,
+                name,
+                5,
+                Some(financial_id),
+                true,
+                opening_date,
+                None,
+                None,
+            )?;
+        }
+
+        Ok(expenses_id)
+    }
+
+    pub fn init_sample_data(&self) -> Result<()> {
+        self.conn.execute("BEGIN TRANSACTION", [])?;
+
+        self.init_account_types()?;
+        self.init_assets()?;
+
+        let opening_date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
+        
+        self.init_asset_accounts(opening_date)?;
+        self.init_liability_accounts(opening_date)?;
+        self.init_equity_accounts(opening_date)?;
+        self.init_income_accounts(opening_date)?;
+        self.init_expense_accounts(opening_date)?;
 
         self.conn.execute("COMMIT", [])?;
         Ok(())
