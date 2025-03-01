@@ -8,12 +8,13 @@ use crate::db::Database;
 
 fn main() -> error::Result<()> {
     // Example usage
-    let db = Database::new("./ciao.db")?;
+    let db = Database::new("./mm.db")?;
 
-    db.init_schema()?;
-    init_sample_data(&db).unwrap();
+    let balance = db.get_general_balance()?;
+    dbg!(balance);
 
-    println!("Database initialized with sample data");
+    // db.init_schema()?;
+    // init_sample_data(&db).unwrap();
 
     Ok(())
 }

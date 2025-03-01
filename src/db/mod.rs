@@ -13,6 +13,7 @@ pub struct Database {
 }
 
 /// Represents a row in the general balance report
+#[derive(Debug)]
 pub struct GeneralBalanceReport {
     pub account_number: String,
     pub account_name: String,
