@@ -1,5 +1,5 @@
 use rusqlite::{
-    types::{FromSql, FromSqlError, ToSql},
+    types::{FromSql, ToSql},
     Result,
 };
 use rust_decimal::Decimal;
@@ -13,12 +13,9 @@ impl From<i64> for Money {
     /// Convert from an i64 to the [`Money`] type.
     /// Please note that the i64 has eight decimal places.
     fn from(value: i64) -> Self {
-        todo!()
-        // Ok(Money(
-        //     value
-        //         .parse()
-        //         .map_err(|err| FromSqlError::Other(Box::new(err)))?,
-        // ))
+        // Convert from i64 with 8 decimal places to Decimal
+        // Example: 12345678 -> 0.12345678
+        Money(Decimal::new(value, 8))
     }
 }
 
