@@ -23,10 +23,12 @@ impl ToSql for Money {
         let scaled = self.0 * Decimal::new(100000000, 0);
         let floored = scaled.floor();
 
-        let value = scaled
-            .to_i64()
-            .ok_or(rusqlite::Error::ToSqlConversionFailure)?;
-        Ok(rusqlite::types::ToSqlOutput::from(value))
+        match scaled.to_i64() {
+            Some(value) => Ok(rusqlite::types::ToSqlOutput::from(value)),
+            None => Err(rusqlite::Error::ToSqlConversionFailure(Box::new(
+                std::io::Error::new(std::io::ErrorKind::InvalidData, "Cannot convert decimal to i64"),
+            ))),
+        }
     }
 }
 
