@@ -2,19 +2,19 @@ name: Nix Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["master"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@main
-    
-    - name: Run Nix Build
-      run: nix build
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Run Nix Build
+        run: nix build
