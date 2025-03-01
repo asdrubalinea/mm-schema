@@ -2,17 +2,18 @@ mod db;
 mod error;
 mod models;
 
+use db::seeding::init_sample_data;
+
 use crate::db::Database;
 
 fn main() -> error::Result<()> {
     // Example usage
-    let db = Database::new_in_memory()?;
+    let db = Database::new("./ciao.db")?;
 
     db.init_schema()?;
-    // Seed with sample data
-    // db.init_sample_data()?;
+    init_sample_data(&db).unwrap();
 
-    // println!("Database initialized with sample data");
+    println!("Database initialized with sample data");
 
     Ok(())
 }

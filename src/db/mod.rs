@@ -6,8 +6,18 @@ use crate::models::{AssetType, NormalBalance};
 #[cfg(test)]
 mod tests;
 
+pub(crate) mod seeding;
+
 pub struct Database {
     conn: Connection,
+}
+
+/// Represents a row in the general balance report
+pub struct GeneralBalanceReport {
+    pub account_number: String,
+    pub account_name: String,
+    pub asset: String,
+    pub balance: f32,
 }
 
 impl Database {
@@ -112,5 +122,27 @@ impl Database {
         )?;
 
         Ok(id)
+    }
+
+    // General Balance Report
+    pub fn get_general_balance(&self) -> Result<Vec<GeneralBalanceReport>> {
+        let mut stmt = self
+            .conn
+            .prepare(include_str!("../sql/general_balance.sql"))?;
+        let rows = stmt.query_map([], |row| {
+            Ok(GeneralBalanceReport {
+                account_number: row.get(0)?,
+                account_name: row.get(1)?,
+                asset: row.get(2)?,
+                balance: row.get(3)?,
+            })
+        })?;
+
+        let mut results = Vec::new();
+        for row in rows {
+            results.push(row?);
+        }
+
+        Ok(results)
     }
 }
