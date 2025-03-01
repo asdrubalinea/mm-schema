@@ -21,15 +21,18 @@ impl From<i64> for Money {
 
 impl ToSql for Money {
     fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>> {
-        let str_val = self.0.to_string();
-        Ok(rusqlite::types::ToSqlOutput::from(str_val))
+        // Convert Decimal to i64 with 8 decimal places
+        // Example: 0.12345678 -> 12345678
+        let scaled = self.0 * Decimal::new(100000000, 0);
+        let value = scaled.to_i64().ok_or(rusqlite::Error::ToSqlConversionFailure)?;
+        Ok(rusqlite::types::ToSqlOutput::from(value))
     }
 }
 
 impl FromSql for Money {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        let str_val = String::column_result(value)?;
-        Money::try_from(str_val)
+        let val = i64::column_result(value)?;
+        Ok(Money::from(val))
     }
 }
 
