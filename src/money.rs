@@ -155,6 +155,47 @@ mod tests {
     }
 
     #[test]
+    fn test_money_max_values() {
+        // Maximum positive value for i64 is 9,223,372,036,854,775,807
+        // With 8 decimal places, this means our maximum decimal is 92,233,720,368.54775807
+        let max_money = Money::from_str("92233720368.54775807").unwrap();
+        let min_money = Money::from_str("-92233720368.54775807").unwrap();
+
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute(
+            "CREATE TABLE test_max_money (id INTEGER PRIMARY KEY, amount INTEGER NOT NULL)",
+            [],
+        )
+        .unwrap();
+
+        // Test inserting maximum values
+        conn.execute("INSERT INTO test_max_money (amount) VALUES (?)", [&max_money])
+            .unwrap();
+        conn.execute("INSERT INTO test_max_money (amount) VALUES (?)", [&min_money])
+            .unwrap();
+
+        // Verify retrieved values
+        let mut stmt = conn
+            .prepare("SELECT amount FROM test_max_money ORDER BY id")
+            .unwrap();
+        let money_iter = stmt
+            .query_map([], |row| {
+                let value: i64 = row.get(0)?;
+                Ok(Money::from(value))
+            })
+            .unwrap();
+
+        let results: Vec<Money> = money_iter.map(|r| r.unwrap()).collect();
+        assert_eq!(results[0], max_money);
+        assert_eq!(results[1], min_money);
+
+        // Test that exceeding the maximum value fails
+        let too_large = Money::from_str("92233720368.54775808").unwrap();
+        let result = conn.execute("INSERT INTO test_max_money (amount) VALUES (?)", [&too_large]);
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn test_money_db_operations() {
         let conn = Connection::open_in_memory().unwrap();
 
