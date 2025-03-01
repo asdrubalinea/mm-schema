@@ -36,7 +36,7 @@ impl FromSql for Money {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rusqlite::types::{ToSqlOutput, Value};
+    use rusqlite::types::{ToSqlOutput, Value, ValueRef};
 
     #[test]
     fn test_money_from_string() {
@@ -66,8 +66,8 @@ mod tests {
         };
 
         // Test FromSql
-        let value_ref = Value::Text(value).into();
-        let roundtrip = Money::column_result(&value_ref).unwrap();
+        let value = Value::Text(value);
+        let roundtrip = Money::column_result(ValueRef::from(&value)).unwrap();
 
         assert_eq!(original, roundtrip);
     }
