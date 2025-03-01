@@ -9,15 +9,16 @@ use rust_decimal::Decimal;
 #[derive(Debug, PartialEq)]
 pub struct Money(Decimal);
 
-impl TryFrom<String> for Money {
-    type Error = FromSqlError;
-
-    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
-        Ok(Money(
-            value
-                .parse()
-                .map_err(|err| FromSqlError::Other(Box::new(err)))?,
-        ))
+impl From<i64> for Money {
+    /// Convert from an i64 to the [`Money`] type.
+    /// Please note that the i64 has eight decimal places.
+    fn from(value: i64) -> Self {
+        todo!()
+        // Ok(Money(
+        //     value
+        //         .parse()
+        //         .map_err(|err| FromSqlError::Other(Box::new(err)))?,
+        // ))
     }
 }
 
