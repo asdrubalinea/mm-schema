@@ -1,7 +1,7 @@
-mod custom;
 mod db;
 mod error;
 mod models;
+mod money;
 mod seeding;
 
 #[cfg(test)]
