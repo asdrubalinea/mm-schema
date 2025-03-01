@@ -1,13 +1,14 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[allow(unused)]
 pub enum Error {
     #[error("Database error: {0}")]
     Database(#[from] rusqlite::Error),
-    
+
     #[error("Record not found")]
     NotFound,
-    
+
     #[error("Invalid data: {0}")]
     InvalidData(String),
 }

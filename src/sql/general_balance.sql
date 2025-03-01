@@ -27,5 +27,4 @@ SELECT
         ELSE -balance
     END AS balance
 FROM balances
-WHERE account_number IN ('1101', '2101', '1201', '4100', '5301')
 ORDER BY account_number;

@@ -1,3 +1,4 @@
+#![allow(unused)]
 use chrono::{DateTime, NaiveDate, Utc};
 use rusqlite::{params, Connection, Result};
 
@@ -38,11 +39,11 @@ impl Database {
     }
 
     // Account Types
-    pub fn create_account_type(
+    pub fn create_account_type<S: AsRef<str>>(
         &self,
-        name: impl AsRef<str>,
+        name: S,
         normal_balance: NormalBalance,
-        description: Option<impl AsRef<str>>,
+        description: Option<S>,
     ) -> Result<i64> {
         let mut stmt = self.conn.prepare(
             "INSERT INTO account_types (name, normal_balance, description)
@@ -62,13 +63,13 @@ impl Database {
     }
 
     // Assets
-    pub fn create_asset(
+    pub fn create_asset<S: AsRef<str>>(
         &self,
-        code: impl AsRef<str>,
-        name: impl AsRef<str>,
+        code: S,
+        name: S,
         asset_type: AssetType,
         decimals: i64,
-        description: Option<impl AsRef<str>>,
+        description: Option<S>,
     ) -> Result<i64> {
         let mut stmt = self.conn.prepare(
             "INSERT INTO assets (code, name, type, decimals, description)
@@ -90,16 +91,17 @@ impl Database {
     }
 
     // Account creation
-    pub fn create_account(
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_account<S: AsRef<str>>(
         &self,
-        account_number: impl AsRef<str>,
-        name: impl AsRef<str>,
+        account_number: S,
+        name: S,
         account_type_id: i64,
         parent_account_id: Option<i64>,
         is_active: bool,
         opening_date: NaiveDate,
         closing_date: Option<NaiveDate>,
-        description: Option<impl AsRef<str>>,
+        description: Option<S>,
     ) -> Result<i64> {
         let mut stmt = self.conn.prepare(
             "INSERT INTO accounts (
@@ -125,11 +127,11 @@ impl Database {
         Ok(id)
     }
 
-    pub fn insert_transaction(
+    pub fn insert_transaction<S: AsRef<str>>(
         &self,
         date: DateTime<Utc>,
-        description: impl AsRef<str>,
-        reference_number: impl AsRef<str>,
+        description: S,
+        reference_number: S,
         status: EntryStatus,
     ) -> Result<()> {
         todo!()

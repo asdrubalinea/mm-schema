@@ -80,9 +80,6 @@ CREATE TABLE journal_entry_lines (
     asset_id INTEGER NOT NULL,
     entry_type TEXT CHECK(entry_type IN ('DEBIT', 'CREDIT')) NOT NULL,
     amount DECIMAL(19,8) NOT NULL CHECK(amount > 0),
-    reference_amount DECIMAL(19,8) NOT NULL,
-    exchange_rate DECIMAL(19,8),
-    line_number INTEGER NOT NULL,
     description TEXT,
     FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id),
     FOREIGN KEY (account_id) REFERENCES accounts(id),
@@ -92,4 +89,3 @@ CREATE INDEX idx_journal_entry_lines_entry ON journal_entry_lines(journal_entry_
 CREATE INDEX idx_journal_entry_lines_account ON journal_entry_lines(account_id);
 CREATE INDEX idx_journal_entry_lines_asset ON journal_entry_lines(asset_id);
 CREATE INDEX idx_journal_entry_lines_account_asset ON journal_entry_lines(account_id, asset_id); -- For balance queries
-CREATE INDEX idx_journal_entry_lines_entry_line ON journal_entry_lines(journal_entry_id, line_number); -- For ordered retrieval

@@ -21,9 +21,6 @@ INSERT INTO journal_entry_lines (
     asset_id,
     entry_type,
     amount,
-    reference_amount,
-    exchange_rate,
-    line_number,
     description
 ) VALUES
     -- Debit Checking Account (receive money)
@@ -32,9 +29,6 @@ INSERT INTO journal_entry_lines (
      (SELECT id FROM assets WHERE code = 'USD'),
      'DEBIT',
      3000.00,
-     3000.00,
-     1.0,
-     1,
      'Salary deposit'),
     -- Credit Salary Income
     (last_insert_rowid(),
@@ -42,9 +36,6 @@ INSERT INTO journal_entry_lines (
      (SELECT id FROM assets WHERE code = 'USD'),
      'CREDIT',
      3000.00,
-     3000.00,
-     1.0,
-     2,
      'Monthly salary');
 
 COMMIT;
