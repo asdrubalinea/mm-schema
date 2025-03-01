@@ -4,6 +4,8 @@ use rusqlite::{
 };
 use rust_decimal::Decimal;
 
+/// In Rust, money is stored in the Decimal type,
+/// while in SQLite, it is stored as an integer with eight decimal places
 #[derive(Debug, PartialEq)]
 pub struct Money(Decimal);
 
@@ -33,6 +35,7 @@ impl FromSql for Money {
     }
 }
 
+#[allow(unused)]
 impl Money {
     pub fn new(amount: Decimal) -> Self {
         Money(amount)
@@ -66,8 +69,11 @@ impl std::ops::Sub for Money {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rusqlite::{
+        types::{ToSqlOutput, Value, ValueRef},
+        Connection,
+    };
     use rust_decimal_macros::dec;
-    use rusqlite::{types::{ToSqlOutput, Value, ValueRef}, Connection};
 
     #[test]
     fn test_money_from_string() {
@@ -77,6 +83,7 @@ mod tests {
             ("-99.99", true),
             ("1234567890.12", true),
             ("0.001", true),
+            ("0.000000000000001", true),
             ("abc", false),
             ("12.345.67", false),
             ("", false),
@@ -85,7 +92,12 @@ mod tests {
 
         for (input, should_succeed) in valid_cases {
             let result = Money::from_str(input);
-            assert_eq!(result.is_ok(), should_succeed, "Failed for input: {}", input);
+            assert_eq!(
+                result.is_ok(),
+                should_succeed,
+                "Failed for input: {}",
+                input
+            );
         }
     }
 
@@ -93,7 +105,7 @@ mod tests {
     fn test_money_arithmetic() {
         let m1 = Money::new(dec!(100.50));
         let m2 = Money::new(dec!(50.25));
-        
+
         let sum = m1 + m2;
         assert_eq!(sum.amount(), dec!(150.75));
 
@@ -104,11 +116,15 @@ mod tests {
     #[test]
     fn test_money_precision() {
         // Test with maximum precision
-        let large_amount = Money::from_str("9999999999999.99").unwrap();
-        let small_amount = Money::from_str("0.01").unwrap();
+        let large_amount = Money::from_str("9999999999999999.9999999999999999").unwrap();
+        let small_amount = Money::from_str("0.0000000000000001").unwrap();
+
         let result = large_amount + small_amount;
-        assert_eq!(result.amount().to_string(), "10000000000000.00");
-        
+        assert_eq!(
+            result.amount().to_string(),
+            "10000000000000000.000000000000"
+        );
+
         // Test rounding behavior
         let m = Money::from_str("1.234").unwrap();
         assert_eq!(m.amount().round_dp(2).to_string(), "1.23");
@@ -135,12 +151,13 @@ mod tests {
     #[test]
     fn test_money_db_operations() {
         let conn = Connection::open_in_memory().unwrap();
-        
+
         // Create a test table
         conn.execute(
             "CREATE TABLE test_money (id INTEGER PRIMARY KEY, amount TEXT NOT NULL)",
             [],
-        ).unwrap();
+        )
+        .unwrap();
 
         // Test inserting and retrieving money values
         let test_amounts = vec![
@@ -150,21 +167,23 @@ mod tests {
         ];
 
         for amount in &test_amounts {
-            conn.execute(
-                "INSERT INTO test_money (amount) VALUES (?)",
-                [amount],
-            ).unwrap();
+            conn.execute("INSERT INTO test_money (amount) VALUES (?)", [amount])
+                .unwrap();
         }
 
         // Verify retrieved values
-        let mut stmt = conn.prepare("SELECT amount FROM test_money ORDER BY id").unwrap();
-        let money_iter = stmt.query_map([], |row| {
-            let value: String = row.get(0)?;
-            Money::try_from(value)
-        }).unwrap();
+        let mut stmt = conn
+            .prepare("SELECT amount FROM test_money ORDER BY id")
+            .unwrap();
+        let money_iter = stmt
+            .query_map([], |row| {
+                let value: String = row.get(0)?;
+                Ok(Money::try_from(value))
+            })
+            .unwrap();
 
         for (stored, original) in money_iter.zip(test_amounts) {
-            assert_eq!(stored.unwrap(), original);
+            assert_eq!(stored.unwrap().unwrap(), original);
         }
     }
 }
