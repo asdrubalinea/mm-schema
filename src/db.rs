@@ -1,13 +1,10 @@
 #![allow(unused)]
+use std::env::consts::OS;
+
 use chrono::{DateTime, NaiveDate, Utc};
 use rusqlite::{params, Connection, Result};
 
 use crate::models::{AssetType, EntryStatus, NormalBalance};
-
-#[cfg(test)]
-mod tests;
-
-pub(crate) mod seeding;
 
 pub struct Database {
     conn: Connection,
@@ -34,7 +31,17 @@ impl Database {
     }
 
     pub fn init_schema(&self) -> Result<()> {
-        self.conn.execute_batch(include_str!("../sql/schema.sql"))?;
+        self.conn.execute_batch(include_str!("sql/schema.sql"))?;
+        Ok(())
+    }
+
+    pub(crate) fn begin_transaction(&self) -> Result<()> {
+        self.conn.execute("BEGIN TRANSACTION", [])?;
+        Ok(())
+    }
+
+    pub(crate) fn commit_transaction(&self) -> Result<()> {
+        self.conn.execute("COMMIT", [])?;
         Ok(())
     }
 
@@ -127,21 +134,28 @@ impl Database {
         Ok(id)
     }
 
-    pub fn insert_transaction<S: AsRef<str>>(
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_transaction<S: AsRef<str>>(
         &self,
         date: DateTime<Utc>,
         description: S,
         reference_number: S,
         status: EntryStatus,
+
+        from_account_id: i64,
+        to_account_id: i64,
+
+        from_asset_id: i64,
+        to_asset_id: i64,
+
+        amount: i32,
     ) -> Result<()> {
         todo!()
     }
 
     // General Balance Report
     pub fn get_general_balance(&self) -> Result<Vec<GeneralBalanceReport>> {
-        let mut stmt = self
-            .conn
-            .prepare(include_str!("../sql/general_balance.sql"))?;
+        let mut stmt = self.conn.prepare(include_str!("sql/general_balance.sql"))?;
         let rows = stmt.query_map([], |row| {
             Ok(GeneralBalanceReport {
                 account_number: row.get(0)?,

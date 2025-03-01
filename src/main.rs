@@ -1,8 +1,12 @@
 mod db;
 mod error;
 mod models;
+mod seeding;
 
-use db::seeding::init_sample_data;
+#[cfg(test)]
+mod tests;
+
+use seeding::init_sample_data;
 
 use crate::db::Database;
 

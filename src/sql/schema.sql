@@ -61,10 +61,8 @@ CREATE TABLE journal_entries (
     date DATETIME NOT NULL,
     description TEXT NOT NULL,
     reference_number TEXT,
-    reference_asset_id INTEGER NOT NULL,
     status TEXT CHECK(status IN ('DRAFT', 'POSTED', 'VOID')) DEFAULT 'DRAFT',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (reference_asset_id) REFERENCES assets(id)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_journal_entries_date ON journal_entries(date);
 CREATE INDEX idx_journal_entries_status ON journal_entries(status);

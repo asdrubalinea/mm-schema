@@ -1,4 +1,3 @@
--- 1. Receiving a salary (3000 USD)
 BEGIN TRANSACTION;
 
 INSERT INTO journal_entries (
@@ -21,14 +20,13 @@ INSERT INTO journal_entry_lines (
     amount,
     description
 ) VALUES
-    -- Debit Checking Account (receive money)
     (last_insert_rowid(),
      (SELECT id FROM accounts WHERE account_number = '1101'), -- Main Checking
      (SELECT id FROM assets WHERE code = 'USD'),
      'DEBIT',
      3000.00,
      'Salary deposit'),
-    -- Credit Salary Income
+
     (last_insert_rowid(),
      (SELECT id FROM accounts WHERE account_number = '4100'), -- Salary
      (SELECT id FROM assets WHERE code = 'USD'),

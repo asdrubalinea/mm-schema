@@ -8,7 +8,7 @@ use crate::{
 use super::Database;
 
 pub(crate) fn init_sample_data(db: &Database) -> Result<()> {
-    db.conn.execute("BEGIN TRANSACTION", [])?;
+    db.begin_transaction()?;
 
     init_account_types(db)?;
     init_assets(db)?;
@@ -21,7 +21,7 @@ pub(crate) fn init_sample_data(db: &Database) -> Result<()> {
     init_income_accounts(db, opening_date)?;
     init_expense_accounts(db, opening_date)?;
 
-    db.conn.execute("COMMIT", [])?;
+    db.commit_transaction()?;
     Ok(())
 }
 
