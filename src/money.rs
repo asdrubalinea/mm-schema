@@ -60,21 +60,15 @@ mod tests {
 
         // Test ToSql
         let sql_value = original.to_sql().unwrap();
-        dbg!(sql_value);
-        match sql_value {
-            ToSqlOutput::Owned(value) if matches!(value, Value::Text(s)) => todo!(),
-            _ => panic!(),
-        }
+        let value = match sql_value {
+            ToSqlOutput::Owned(Value::Text(s)) => s,
+            _ => panic!("Expected Text output"),
+        };
 
-        // let str_val = match sql_value {
-        //     rusqlite::types::ToSqlOutput::Text(s) => s,
-        //     _ => panic!("Expected Text output"),
-        // };
+        // Test FromSql
+        let value_ref = Value::Text(value).into();
+        let roundtrip = Money::column_result(&value_ref).unwrap();
 
-        // // Test FromSql
-        // let value_ref = Value::Text(str_val).into();
-        // let roundtrip = Money::column_result(&value_ref).unwrap();
-
-        // assert_eq!(original, roundtrip);
+        assert_eq!(original, roundtrip);
     }
 }
