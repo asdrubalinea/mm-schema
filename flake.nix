@@ -45,7 +45,14 @@
         };
 
       craneLib = crane.mkLib pkgs;
-      src = craneLib.cleanCargoSource ./.;
+
+      sqlFilter = path: _type: builtins.match ".*sql$" path != null;
+      compositeFilter = path: type: (sqlFilter path type) || (craneLib.filterCargoSources path type);
+
+      src = pkgs.lib.cleanSourceWith {
+        src = craneLib.path ./.; # The original, unfiltered source
+        filter = compositeFilter;
+      };
 
       # Common arguments can be set here to avoid repeating them later
       commonArgs = {
