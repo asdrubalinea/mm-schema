@@ -1,3 +1,4 @@
+mod custom;
 mod db;
 mod error;
 mod models;

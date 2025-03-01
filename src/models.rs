@@ -86,9 +86,6 @@ pub struct JournalEntryLine {
     pub asset_id: i64,
     pub entry_type: NormalBalance,
     pub amount: Decimal,
-    pub reference_amount: Decimal,
-    pub exchange_rate: Option<Decimal>,
-    pub line_number: i64,
     pub description: Option<String>,
 }
 

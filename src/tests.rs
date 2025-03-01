@@ -1,4 +1,8 @@
-use crate::{error::Result, init_sample_data};
+use crate::{
+    error::Result,
+    init_sample_data,
+    models::{AssetType, NormalBalance},
+};
 
 use super::*;
 use chrono::NaiveDate;
@@ -72,24 +76,24 @@ fn test_init_sample_data() -> Result<()> {
     init_sample_data(&db)?;
 
     // Verify some sample data was created
-    let mut stmt = db.conn.prepare("SELECT COUNT(*) FROM account_types")?;
+    let mut stmt = db.conn().prepare("SELECT COUNT(*) FROM account_types")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
     assert_eq!(count, 5);
 
-    let mut stmt = db.conn.prepare("SELECT COUNT(*) FROM assets")?;
+    let mut stmt = db.conn().prepare("SELECT COUNT(*) FROM assets")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
     assert_eq!(count, 6);
 
-    let mut stmt = db.conn.prepare("SELECT COUNT(*) FROM accounts")?;
+    let mut stmt = db.conn().prepare("SELECT COUNT(*) FROM accounts")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
     assert!(count > 0);
 
-    let mut stmt = db.conn.prepare("SELECT COUNT(*) FROM journal_entries")?;
+    let mut stmt = db.conn().prepare("SELECT COUNT(*) FROM journal_entries")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
     assert_eq!(count, 0);
 
     let mut stmt = db
-        .conn
+        .conn()
         .prepare("SELECT COUNT(*) FROM journal_entry_lines")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
     assert_eq!(count, 0);

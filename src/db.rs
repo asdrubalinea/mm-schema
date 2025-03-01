@@ -2,7 +2,7 @@
 use std::env::consts::OS;
 
 use chrono::{DateTime, NaiveDate, Utc};
-use rusqlite::{params, Connection, Result};
+use rusqlite::{named_params, params, Connection, Result};
 
 use crate::models::{AssetType, EntryStatus, NormalBalance};
 
@@ -33,6 +33,10 @@ impl Database {
     pub fn init_schema(&self) -> Result<()> {
         self.conn.execute_batch(include_str!("sql/schema.sql"))?;
         Ok(())
+    }
+
+    pub(crate) fn conn(&self) -> &Connection {
+        &self.conn
     }
 
     pub(crate) fn begin_transaction(&self) -> Result<()> {
@@ -135,7 +139,7 @@ impl Database {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn create_transaction<S: AsRef<str>>(
+    pub fn insert_transaction<S: AsRef<str>>(
         &self,
         date: DateTime<Utc>,
         description: S,
@@ -150,7 +154,19 @@ impl Database {
 
         amount: i32,
     ) -> Result<()> {
-        todo!()
+        let mut stmt = self
+            .conn
+            .prepare(include_str!("sql/insert_transaction.sql"))?;
+
+        let res = stmt.execute(named_params! {
+            ":date": date,
+            ":description": description.as_ref(),
+            ":reference_number": reference_number.as_ref(),
+            ":status": format!("{:?}", status).to_uppercase(),
+            ":amount": amount,
+        })?;
+
+        Ok(())
     }
 
     // General Balance Report
