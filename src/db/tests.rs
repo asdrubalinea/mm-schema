@@ -78,7 +78,7 @@ fn test_init_sample_data() -> Result<()> {
 
     let mut stmt = db.conn.prepare("SELECT COUNT(*) FROM assets")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
-    assert_eq!(count, 4);
+    assert_eq!(count, 6);
 
     let mut stmt = db.conn.prepare("SELECT COUNT(*) FROM accounts")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
@@ -86,13 +86,13 @@ fn test_init_sample_data() -> Result<()> {
 
     let mut stmt = db.conn.prepare("SELECT COUNT(*) FROM journal_entries")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
-    assert_eq!(count, 4);
+    assert_eq!(count, 0);
 
     let mut stmt = db
         .conn
         .prepare("SELECT COUNT(*) FROM journal_entry_lines")?;
     let count: i64 = stmt.query_row([], |row| row.get(0))?;
-    assert_eq!(count, 8);
+    assert_eq!(count, 0);
 
     Ok(())
 }
