@@ -1,9 +1,10 @@
 use rusqlite::types::{FromSql, ToSql};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
+use serde::{Deserialize, Serialize};
 
 /// In Rust, money is stored in the Decimal type,
 /// while in SQLite, it is stored as an integer with eight decimal places
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub struct Money(Decimal);
 
 impl From<i64> for Money {
@@ -169,10 +170,16 @@ mod tests {
         .unwrap();
 
         // Test inserting maximum values
-        conn.execute("INSERT INTO test_max_money (amount) VALUES (?)", [&max_money])
-            .unwrap();
-        conn.execute("INSERT INTO test_max_money (amount) VALUES (?)", [&min_money])
-            .unwrap();
+        conn.execute(
+            "INSERT INTO test_max_money (amount) VALUES (?)",
+            [&max_money],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO test_max_money (amount) VALUES (?)",
+            [&min_money],
+        )
+        .unwrap();
 
         // Verify retrieved values
         let mut stmt = conn
@@ -191,7 +198,10 @@ mod tests {
 
         // Test that exceeding the maximum value fails
         let too_large = Money::from_str("92233720368.54775808").unwrap();
-        let result = conn.execute("INSERT INTO test_max_money (amount) VALUES (?)", [&too_large]);
+        let result = conn.execute(
+            "INSERT INTO test_max_money (amount) VALUES (?)",
+            [&too_large],
+        );
         assert!(result.is_err());
     }
 

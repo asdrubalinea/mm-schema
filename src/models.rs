@@ -2,6 +2,8 @@ use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
+use crate::money::Money;
+
 /// Represents a type of account in the accounting system
 ///
 /// Account types define the basic categories of accounts (e.g., Asset, Liability, Equity)
@@ -85,7 +87,7 @@ pub struct JournalEntryLine {
     pub account_id: i64,
     pub asset_id: i64,
     pub entry_type: NormalBalance,
-    pub amount: Decimal,
+    pub amount: Money,
     pub description: Option<String>,
 }
 
