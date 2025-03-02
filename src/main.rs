@@ -1,5 +1,5 @@
-mod db;
 mod error;
+mod interface;
 mod models;
 mod money;
 mod seeding;
@@ -11,11 +11,11 @@ use chrono::Utc;
 use money::Money;
 use rust_decimal_macros::dec;
 
-use crate::db::Database;
+use crate::interface::Database;
 
 fn main() -> error::Result<()> {
     // Example usage
-    let mut db = Database::new("./ciao.db")?;
+    let mut db = Database::new_in_memory()?;
 
     db.init_schema()?;
     seeding::init_sample_data(&mut db).unwrap();
