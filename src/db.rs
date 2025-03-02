@@ -55,19 +55,21 @@ impl Database {
     ) -> Result<i64> {
         let t = self.transaction()?;
 
-        let mut stmt = t.prepare(
-            "INSERT INTO account_types (name, normal_balance, description)
-             VALUES (?1, ?2, ?3) RETURNING id",
-        )?;
+        let id = {
+            let mut stmt = t.prepare(
+                "INSERT INTO account_types (name, normal_balance, description)
+                 VALUES (?1, ?2, ?3) RETURNING id",
+            )?;
 
-        let id = stmt.query_row(
-            params![
-                name.as_ref(),
-                format!("{:?}", normal_balance).to_uppercase(),
-                description.map(|d| d.as_ref().to_string())
-            ],
-            |row| row.get(0),
-        )?;
+            stmt.query_row(
+                params![
+                    name.as_ref(),
+                    format!("{:?}", normal_balance).to_uppercase(),
+                    description.map(|d| d.as_ref().to_string())
+                ],
+                |row| row.get(0),
+            )?
+        };
 
         t.commit()?;
 
