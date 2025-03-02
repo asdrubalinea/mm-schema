@@ -9,9 +9,7 @@ use crate::{
     money::Money,
 };
 
-pub struct Database {
-    conn: Connection,
-}
+pub struct Database(Connection);
 
 /// Represents a row in the general balance report
 #[derive(Debug)]
@@ -25,25 +23,25 @@ pub struct GeneralBalanceReport {
 impl Database {
     pub fn new(path: &str) -> Result<Self> {
         let conn = Connection::open(path)?;
-        Ok(Self { conn })
+        Ok(Self(conn))
     }
 
     pub fn new_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;
-        Ok(Self { conn })
+        Ok(Self(conn))
     }
 
     pub fn init_schema(&self) -> Result<()> {
-        self.conn.execute_batch(include_str!("sql/schema.sql"))?;
+        self.conn().execute_batch(include_str!("sql/schema.sql"))?;
         Ok(())
     }
 
     pub(crate) fn conn(&self) -> &Connection {
-        &self.conn
+        &self.0
     }
 
     pub(crate) fn transaction(&mut self) -> Result<Transaction> {
-        self.conn.transaction()
+        self.0.transaction()
     }
 
     // Account Types
@@ -169,7 +167,7 @@ impl Database {
 
         amount: Money,
     ) -> Result<()> {
-        let t = self.conn.transaction()?;
+        let t = self.transaction()?;
 
         t.execute(
             include_str!("sql/insert_journal_entry.sql"),
@@ -196,7 +194,10 @@ impl Database {
 
     // General Balance Report
     pub fn get_general_balance(&self) -> Result<Vec<GeneralBalanceReport>> {
-        let mut stmt = self.conn.prepare(include_str!("sql/general_balance.sql"))?;
+        let mut stmt = self
+            .conn()
+            .prepare(include_str!("sql/general_balance.sql"))?;
+
         let rows = stmt.query_map([], |row| {
             Ok(GeneralBalanceReport {
                 account_number: row.get(0)?,
