@@ -19,7 +19,7 @@ pub struct GeneralBalanceReport {
     pub account_number: String,
     pub account_name: String,
     pub asset: String,
-    pub balance: f32,
+    pub balance: Money,
 }
 
 impl Database {
@@ -87,21 +87,25 @@ impl Database {
     ) -> Result<i64> {
         let t = self.transaction()?;
 
-        let mut stmt = t.prepare(
-            "INSERT INTO assets (code, name, type, decimals, description)
-             VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id",
-        )?;
+        let id = {
+            let mut stmt = t.prepare(
+                "INSERT INTO assets (code, name, type, decimals, description)
+                         VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id",
+            )?;
 
-        let id = stmt.query_row(
-            params![
-                code.as_ref(),
-                name.as_ref(),
-                format!("{:?}", asset_type).to_uppercase(),
-                decimals,
-                description.map(|d| d.as_ref().to_string())
-            ],
-            |row| row.get(0),
-        )?;
+            stmt.query_row(
+                params![
+                    code.as_ref(),
+                    name.as_ref(),
+                    format!("{:?}", asset_type).to_uppercase(),
+                    decimals,
+                    description.map(|d| d.as_ref().to_string())
+                ],
+                |row| row.get(0),
+            )?
+        };
+
+        t.commit()?;
 
         Ok(id)
     }
@@ -121,26 +125,30 @@ impl Database {
     ) -> Result<i64> {
         let t = self.transaction()?;
 
-        let mut stmt = t.prepare(
-            "INSERT INTO accounts (
-                account_number, name, account_type_id, parent_account_id,
-                is_active, opening_date, closing_date, description
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) RETURNING id",
-        )?;
+        let id = {
+            let mut stmt = t.prepare(
+                "INSERT INTO accounts (
+                            account_number, name, account_type_id, parent_account_id,
+                            is_active, opening_date, closing_date, description
+                        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) RETURNING id",
+            )?;
 
-        let id = stmt.query_row(
-            params![
-                account_number.as_ref(),
-                name.as_ref(),
-                account_type_id,
-                parent_account_id,
-                is_active,
-                opening_date,
-                closing_date,
-                description.map(|d| d.as_ref().to_string())
-            ],
-            |row| row.get(0),
-        )?;
+            stmt.query_row(
+                params![
+                    account_number.as_ref(),
+                    name.as_ref(),
+                    account_type_id,
+                    parent_account_id,
+                    is_active,
+                    opening_date,
+                    closing_date,
+                    description.map(|d| d.as_ref().to_string())
+                ],
+                |row| row.get(0),
+            )?
+        };
+
+        t.commit()?;
 
         Ok(id)
     }
@@ -180,6 +188,8 @@ impl Database {
                 ":amount": amount
             },
         );
+
+        t.commit()?;
 
         Ok(())
     }

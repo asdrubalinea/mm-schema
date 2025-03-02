@@ -20,20 +20,20 @@ fn main() -> error::Result<()> {
     db.init_schema()?;
     seeding::init_sample_data(&mut db).unwrap();
 
-    // db.insert_transaction(
-    //     Utc::now(),
-    //     "Ciao",
-    //     "IDK",
-    //     models::EntryStatus::Posted,
-    //     0,
-    //     0,
-    //     0,
-    //     0,
-    //     Money::new(dec!(3000.0)),
-    // )?;
+    db.insert_transaction(
+        Utc::now(),
+        "Ciao",
+        "IDK",
+        models::EntryStatus::Posted,
+        0,
+        0,
+        0,
+        0,
+        Money::new(dec!(3000.0)),
+    )?;
 
-    // let balance = db.get_general_balance()?;
-    // dbg!(balance);
+    let balance = db.get_general_balance()?;
+    dbg!(balance);
 
     Ok(())
 }

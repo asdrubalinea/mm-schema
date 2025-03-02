@@ -13,11 +13,11 @@ pub(crate) fn init_sample_data(db: &mut Database) -> Result<()> {
 
     let opening_date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
 
-    // init_asset_accounts(db, opening_date)?;
-    // init_liability_accounts(db, opening_date)?;
-    // init_equity_accounts(db, opening_date)?;
-    // init_income_accounts(db, opening_date)?;
-    // init_expense_accounts(db, opening_date)?;
+    init_asset_accounts(db, opening_date)?;
+    init_liability_accounts(db, opening_date)?;
+    init_equity_accounts(db, opening_date)?;
+    init_income_accounts(db, opening_date)?;
+    init_expense_accounts(db, opening_date)?;
 
     Ok(())
 }
