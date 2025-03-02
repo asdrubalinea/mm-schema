@@ -7,19 +7,33 @@ mod seeding;
 #[cfg(test)]
 mod tests;
 
-use seeding::init_sample_data;
+use chrono::Utc;
+use money::Money;
+use rust_decimal_macros::dec;
 
 use crate::db::Database;
 
 fn main() -> error::Result<()> {
     // Example usage
-    let db = Database::new("./mm.db")?;
+    let mut db = Database::new("./ciao.db")?;
 
-    let balance = db.get_general_balance()?;
-    dbg!(balance);
+    db.init_schema()?;
+    seeding::init_sample_data(&mut db).unwrap();
 
-    // db.init_schema()?;
-    // init_sample_data(&db).unwrap();
+    // db.insert_transaction(
+    //     Utc::now(),
+    //     "Ciao",
+    //     "IDK",
+    //     models::EntryStatus::Posted,
+    //     0,
+    //     0,
+    //     0,
+    //     0,
+    //     Money::new(dec!(3000.0)),
+    // )?;
+
+    // let balance = db.get_general_balance()?;
+    // dbg!(balance);
 
     Ok(())
 }

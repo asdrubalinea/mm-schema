@@ -1,15 +1,3 @@
-INSERT INTO journal_entries (
-    date,
-    description,
-    reference_number,
-    status
-) VALUES (
-    :date,
-    :description,
-    :reference_number,
-    :status
-);
-
 INSERT INTO journal_entry_lines (
     journal_entry_id,
     account_id,

@@ -2,9 +2,12 @@
 use std::env::consts::OS;
 
 use chrono::{DateTime, NaiveDate, Utc};
-use rusqlite::{named_params, params, Connection, Result};
+use rusqlite::{named_params, params, Connection, Result, Transaction};
 
-use crate::models::{AssetType, EntryStatus, NormalBalance};
+use crate::{
+    models::{AssetType, EntryStatus, NormalBalance},
+    money::Money,
+};
 
 pub struct Database {
     conn: Connection,
@@ -39,24 +42,20 @@ impl Database {
         &self.conn
     }
 
-    pub(crate) fn begin_transaction(&self) -> Result<()> {
-        self.conn.execute("BEGIN TRANSACTION", [])?;
-        Ok(())
-    }
-
-    pub(crate) fn commit_transaction(&self) -> Result<()> {
-        self.conn.execute("COMMIT", [])?;
-        Ok(())
+    pub(crate) fn transaction(&mut self) -> Result<Transaction> {
+        self.conn.transaction()
     }
 
     // Account Types
     pub fn create_account_type<S: AsRef<str>>(
-        &self,
+        &mut self,
         name: S,
         normal_balance: NormalBalance,
         description: Option<S>,
     ) -> Result<i64> {
-        let mut stmt = self.conn.prepare(
+        let t = self.transaction()?;
+
+        let mut stmt = t.prepare(
             "INSERT INTO account_types (name, normal_balance, description)
              VALUES (?1, ?2, ?3) RETURNING id",
         )?;
@@ -70,19 +69,23 @@ impl Database {
             |row| row.get(0),
         )?;
 
+        t.commit()?;
+
         Ok(id)
     }
 
     // Assets
     pub fn create_asset<S: AsRef<str>>(
-        &self,
+        &mut self,
         code: S,
         name: S,
         asset_type: AssetType,
         decimals: i64,
         description: Option<S>,
     ) -> Result<i64> {
-        let mut stmt = self.conn.prepare(
+        let t = self.transaction()?;
+
+        let mut stmt = t.prepare(
             "INSERT INTO assets (code, name, type, decimals, description)
              VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id",
         )?;
@@ -104,7 +107,7 @@ impl Database {
     // Account creation
     #[allow(clippy::too_many_arguments)]
     pub fn create_account<S: AsRef<str>>(
-        &self,
+        &mut self,
         account_number: S,
         name: S,
         account_type_id: i64,
@@ -114,7 +117,9 @@ impl Database {
         closing_date: Option<NaiveDate>,
         description: Option<S>,
     ) -> Result<i64> {
-        let mut stmt = self.conn.prepare(
+        let t = self.transaction()?;
+
+        let mut stmt = t.prepare(
             "INSERT INTO accounts (
                 account_number, name, account_type_id, parent_account_id,
                 is_active, opening_date, closing_date, description
@@ -140,7 +145,7 @@ impl Database {
 
     #[allow(clippy::too_many_arguments)]
     pub fn insert_transaction<S: AsRef<str>>(
-        &self,
+        &mut self,
         date: DateTime<Utc>,
         description: S,
         reference_number: S,
@@ -152,19 +157,27 @@ impl Database {
         from_asset_id: i64,
         to_asset_id: i64,
 
-        amount: i32,
+        amount: Money,
     ) -> Result<()> {
-        let mut stmt = self
-            .conn
-            .prepare(include_str!("sql/insert_transaction.sql"))?;
+        let t = self.conn.transaction()?;
 
-        let res = stmt.execute(named_params! {
-            ":date": date,
-            ":description": description.as_ref(),
-            ":reference_number": reference_number.as_ref(),
-            ":status": format!("{:?}", status).to_uppercase(),
-            ":amount": amount,
-        })?;
+        t.execute(
+            include_str!("sql/insert_journal_entry.sql"),
+            named_params! {
+                ":date": date,
+                ":description": description.as_ref(),
+                ":reference_number": reference_number.as_ref(),
+                ":status": format!("{:?}", status).to_uppercase(),
+            },
+        );
+
+        t.execute(
+            include_str!("sql/insert_journal_entry_lines.sql"),
+            named_params! {
+                ":description": description.as_ref(),
+                ":amount": amount
+            },
+        );
 
         Ok(())
     }

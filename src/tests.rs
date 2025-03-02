@@ -1,7 +1,7 @@
 use crate::{
     error::Result,
-    init_sample_data,
     models::{AssetType, NormalBalance},
+    seeding::init_sample_data,
 };
 
 use super::*;
@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 
 #[test]
 fn test_create_account_type() -> Result<()> {
-    let db = Database::new_in_memory()?;
+    let mut db = Database::new_in_memory()?;
     db.init_schema()?;
 
     let id = db.create_account_type(
@@ -24,7 +24,7 @@ fn test_create_account_type() -> Result<()> {
 
 #[test]
 fn test_create_asset() -> Result<()> {
-    let db = Database::new_in_memory()?;
+    let mut db = Database::new_in_memory()?;
     db.init_schema()?;
 
     let id = db.create_asset(
@@ -41,7 +41,7 @@ fn test_create_asset() -> Result<()> {
 
 #[test]
 fn test_create_account() -> Result<()> {
-    let db = Database::new_in_memory()?;
+    let mut db = Database::new_in_memory()?;
     db.init_schema()?;
 
     // First create an account type
@@ -70,10 +70,10 @@ fn test_create_account() -> Result<()> {
 
 #[test]
 fn test_init_sample_data() -> Result<()> {
-    let db = Database::new_in_memory()?;
+    let mut db = Database::new_in_memory()?;
     db.init_schema()?;
 
-    init_sample_data(&db)?;
+    init_sample_data(&mut db)?;
 
     // Verify some sample data was created
     let mut stmt = db.conn().prepare("SELECT COUNT(*) FROM account_types")?;
