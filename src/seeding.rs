@@ -42,13 +42,13 @@ const SAMPLE_ACCOUNT_TYPES: [(&str, NormalBalance, Option<&str>); 5] = [
     ("Expense", NormalBalance::Debit, Some("Costs and losses")),
 ];
 
-const SAMPLE_ASSETS: [(&str, &str, AssetType, i64, Option<&str>); 6] = [
-    ("USD", "US Dollar", AssetType::Fiat, 2, None),
-    ("EUR", "Euro", AssetType::Fiat, 2, None),
-    ("AAPL", "Apple Inc.", AssetType::Stock, 8, None),
-    ("VWCE", "FTSE All-World", AssetType::Etf, 8, None),
-    ("ETH", "Ethereum", AssetType::Crypto, 18, None),
-    ("BTC", "Bitcoin", AssetType::Crypto, 18, None),
+const SAMPLE_ASSETS: [(&str, &str, AssetType, Option<&str>); 6] = [
+    ("USD", "US Dollar", AssetType::Fiat, None),
+    ("EUR", "Euro", AssetType::Fiat, None),
+    ("AAPL", "Apple Inc.", AssetType::Stock, None),
+    ("VWCE", "FTSE All-World", AssetType::Etf, None),
+    ("ETH", "Ethereum", AssetType::Crypto, None),
+    ("BTC", "Bitcoin", AssetType::Crypto, None),
 ];
 
 fn init_account_types(db: &mut Database) -> Result<()> {
@@ -60,8 +60,8 @@ fn init_account_types(db: &mut Database) -> Result<()> {
 }
 
 fn init_assets(db: &mut Database) -> Result<()> {
-    for (code, name, asset_type, decimals, description) in SAMPLE_ASSETS {
-        db.create_asset(code, name, asset_type, decimals, description)?;
+    for (code, name, asset_type, description) in SAMPLE_ASSETS {
+        db.create_asset(code, name, asset_type, description)?;
     }
     Ok(())
 }

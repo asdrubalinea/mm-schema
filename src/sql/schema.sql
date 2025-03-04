@@ -13,7 +13,6 @@ CREATE TABLE assets (
     code TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     type TEXT NOT NULL CHECK(type IN ('FIAT', 'STOCK', 'BOND', 'ETF', 'ETC', 'ETN', 'CRYPTO', 'COMMODITY')),
-    decimals INTEGER NOT NULL,
     description TEXT
 );
 CREATE INDEX idx_assets_code ON assets(code); -- for asset code lookup

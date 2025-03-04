@@ -1,6 +1,3 @@
-#![allow(unused)]
-use std::env::consts::OS;
-
 use chrono::{DateTime, NaiveDate, Utc};
 use rusqlite::{named_params, params, Connection, Result, Transaction};
 
@@ -36,11 +33,11 @@ impl Database {
         Ok(())
     }
 
-    pub(crate) fn conn(&self) -> &Connection {
+    pub(super) fn conn(&self) -> &Connection {
         &self.0
     }
 
-    pub(crate) fn transaction(&mut self) -> Result<Transaction> {
+    pub(super) fn transaction(&mut self) -> Result<Transaction> {
         self.0.transaction()
     }
 
@@ -80,15 +77,14 @@ impl Database {
         code: S,
         name: S,
         asset_type: AssetType,
-        decimals: i64,
         description: Option<S>,
     ) -> Result<i64> {
         let t = self.transaction()?;
 
         let id = {
             let mut stmt = t.prepare(
-                "INSERT INTO assets (code, name, type, decimals, description)
-                         VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id",
+                "INSERT INTO assets (code, name, type, description)
+                         VALUES (?1, ?2, ?3, ?4) RETURNING id",
             )?;
 
             stmt.query_row(
@@ -96,7 +92,6 @@ impl Database {
                     code.as_ref(),
                     name.as_ref(),
                     format!("{:?}", asset_type).to_uppercase(),
-                    decimals,
                     description.map(|d| d.as_ref().to_string())
                 ],
                 |row| row.get(0),
@@ -152,24 +147,23 @@ impl Database {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn insert_transaction<S: AsRef<str>>(
-        &mut self,
+    fn insert_transaction<S: AsRef<str>>(
+        transaction: &Transaction,
+
         date: DateTime<Utc>,
         description: S,
         reference_number: S,
         status: EntryStatus,
 
-        from_account_id: i64,
-        to_account_id: i64,
+        debit_account_number: S,
+        credit_account_number: S,
 
-        from_asset_id: i64,
-        to_asset_id: i64,
+        debit_asset_code: S,
+        credit_asset_code: S,
 
         amount: Money,
     ) -> Result<()> {
-        let t = self.transaction()?;
-
-        t.execute(
+        transaction.execute(
             include_str!("sql/insert_journal_entry.sql"),
             named_params! {
                 ":date": date,
@@ -177,17 +171,19 @@ impl Database {
                 ":reference_number": reference_number.as_ref(),
                 ":status": format!("{:?}", status).to_uppercase(),
             },
-        );
+        )?;
 
-        t.execute(
+        transaction.execute(
             include_str!("sql/insert_journal_entry_lines.sql"),
             named_params! {
                 ":description": description.as_ref(),
-                ":amount": amount
+                ":amount": amount,
+                ":debit_account_number": debit_account_number.as_ref(),
+                ":debit_asset_code": debit_asset_code.as_ref(),
+                ":credit_account_number": credit_account_number.as_ref(),
+                ":credit_asset_code": credit_asset_code.as_ref(),
             },
-        );
-
-        t.commit()?;
+        )?;
 
         Ok(())
     }

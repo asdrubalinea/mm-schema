@@ -7,15 +7,15 @@ INSERT INTO journal_entry_lines (
     description
 ) VALUES
     (last_insert_rowid(),
-     (SELECT id FROM accounts WHERE account_number = '1101'), -- Main Checking
-     (SELECT id FROM assets WHERE code = 'USD'),
+     (SELECT id FROM accounts WHERE account_number = :debit_account_number),
+     (SELECT id FROM assets WHERE code = :debit_asset_code),
      'DEBIT',
      :amount,
      :description),
 
     (last_insert_rowid(),
-     (SELECT id FROM accounts WHERE account_number = '4100'), -- Salary
-     (SELECT id FROM assets WHERE code = 'USD'),
+     (SELECT id FROM accounts WHERE account_number = :credit_account_number),
+     (SELECT id FROM assets WHERE code = :credit_asset_code),
      'CREDIT',
      :amount,
      :description);

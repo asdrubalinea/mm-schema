@@ -15,22 +15,22 @@ use crate::interface::Database;
 
 fn main() -> error::Result<()> {
     // Example usage
-    let mut db = Database::new_in_memory()?;
+    let mut db = Database::new("./ciao.db")?;
 
     db.init_schema()?;
     seeding::init_sample_data(&mut db).unwrap();
 
-    db.insert_transaction(
-        Utc::now(),
-        "Ciao",
-        "IDK",
-        models::EntryStatus::Posted,
-        0,
-        0,
-        0,
-        0,
-        Money::new(dec!(3000.0)),
-    )?;
+    // db.insert_transaction(
+    //     Utc::now(),
+    //     "Salary",
+    //     "SALARY-01",
+    //     models::EntryStatus::Posted,
+    //     "1101",
+    //     "4100",
+    //     "EUR",
+    //     "EUR",
+    //     Money::new(dec!(3000.0)),
+    // )?;
 
     let balance = db.get_general_balance()?;
     dbg!(balance);
