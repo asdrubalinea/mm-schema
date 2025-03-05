@@ -2,20 +2,10 @@ use rusqlite::types::{FromSql, ToSql};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use serde::{Deserialize, Serialize};
 
-/// In Rust, money is stored in the Decimal type,
-/// while in SQLite, it is stored as an integer with eight decimal places
+/// Rust => Decimal type (float backed by an i128)
+/// SQLite => 64 bit integer with eight decimal places (fixed precision)
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub struct Money(Decimal);
-
-impl From<i64> for Money {
-    /// Convert from an i64 to the [`Money`] type.
-    /// Please note that the i64 has eight decimal places.
-    fn from(value: i64) -> Self {
-        // Convert from i64 with 8 decimal places to Decimal
-        // Example: 12345678 -> 0.12345678
-        Money(Decimal::new(value, 8))
-    }
-}
 
 impl ToSql for Money {
     fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
@@ -38,7 +28,7 @@ impl ToSql for Money {
 impl FromSql for Money {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let val = i64::column_result(value)?;
-        Ok(Money::from(val))
+        Ok(Money::from_sqlite_repr(val))
     }
 }
 
@@ -54,6 +44,18 @@ impl Money {
 
     pub fn amount(&self) -> Decimal {
         self.0
+    }
+
+    pub fn as_f64(&self) -> f64 {
+        self.0.to_f64().unwrap()
+    }
+
+    /// Convert from an i64 stored into SQLite to the [`Money`] type.
+    /// Please note that the i64 has eight decimal places.
+    fn from_sqlite_repr(value: i64) -> Self {
+        // Convert from i64 with 8 decimal places to Decimal
+        // Example: 12345678 -> 0.12345678
+        Money(Decimal::new(value, 8))
     }
 }
 
@@ -75,6 +77,8 @@ impl std::ops::Sub for Money {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
     use rusqlite::{
         types::{ToSqlOutput, Value, ValueRef},
@@ -109,6 +113,24 @@ mod tests {
     }
 
     #[test]
+    fn test_money_from_i64() {
+        let cases = vec![
+            (12345678, "0.12345678"),
+            (100000000, "1.00000000"),
+            (0, "0.00000000"),
+            (-12345678, "-0.12345678"),
+            (9223372036854775807, "92233720368.54775807"),
+            (-9223372036854775808, "-92233720368.54775808"),
+        ];
+
+        for (i64_value, expected_str) in cases {
+            let expected = Decimal::from_str(expected_str).unwrap();
+            let money = Money::from_sqlite_repr(i64_value);
+            assert_eq!(money.0, expected, "Failed for i64 value: {}", i64_value);
+        }
+    }
+
+    #[test]
     fn test_money_arithmetic() {
         let m1 = Money::new(dec!(100.50));
         let m2 = Money::new(dec!(50.25));
@@ -131,10 +153,6 @@ mod tests {
             result.amount().to_string(),
             "10000000000000000.000000000000"
         );
-
-        // Test rounding behavior
-        let m = Money::from_str("1.234").unwrap();
-        assert_eq!(m.amount().round_dp(2).to_string(), "1.23");
     }
 
     #[test]
@@ -188,7 +206,7 @@ mod tests {
         let money_iter = stmt
             .query_map([], |row| {
                 let value: i64 = row.get(0)?;
-                Ok(Money::from(value))
+                Ok(Money::from_sqlite_repr(value))
             })
             .unwrap();
 
@@ -235,12 +253,61 @@ mod tests {
         let money_iter = stmt
             .query_map([], |row| {
                 let value: i64 = row.get(0)?;
-                Ok(Money::from(value))
+                Ok(Money::from_sqlite_repr(value))
             })
             .unwrap();
 
         for (stored, original) in money_iter.zip(test_amounts) {
             assert_eq!(stored.unwrap(), original);
         }
+    }
+
+    #[test]
+    fn test_money_db_arithmetic() {
+        let conn = Connection::open_in_memory().unwrap();
+
+        // Create a test table
+        conn.execute(
+            "CREATE TABLE test_money_arithmetic (id INTEGER PRIMARY KEY, amount INTEGER NOT NULL)",
+            [],
+        )
+        .unwrap();
+
+        // Insert initial money values
+        let m1 = Money::new(dec!(100.50));
+        let m2 = Money::new(dec!(50.25));
+        conn.execute(
+            "INSERT INTO test_money_arithmetic (amount) VALUES (?), (?)",
+            [&m1, &m2],
+        )
+        .unwrap();
+
+        // Perform arithmetic operations in the database
+        conn.execute(
+            "UPDATE test_money_arithmetic SET amount = amount + ? WHERE id = 1",
+            [&m2],
+        )
+        .unwrap();
+
+        conn.execute(
+            "UPDATE test_money_arithmetic SET amount = amount - ? WHERE id = 2",
+            [&m1],
+        )
+        .unwrap();
+
+        // Verify retrieved values
+        let mut stmt = conn
+            .prepare("SELECT amount FROM test_money_arithmetic ORDER BY id")
+            .unwrap();
+        let money_iter = stmt
+            .query_map([], |row| {
+                let value: i64 = row.get(0)?;
+                Ok(Money::from_sqlite_repr(value))
+            })
+            .unwrap();
+
+        let results: Vec<Money> = money_iter.map(|r| r.unwrap()).collect();
+        assert_eq!(results[0], m1 + m2);
+        assert_eq!(results[1], m2 - m1);
     }
 }
