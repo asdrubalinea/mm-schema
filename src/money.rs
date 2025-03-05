@@ -7,12 +7,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub struct Money(Decimal);
 
-impl From<i64> for Money {
+impl From<i128> for Money {
     /// Convert from an i64 to the [`Money`] type.
     /// Please note that the i64 has eight decimal places.
-    fn from(value: i64) -> Self {
+    fn from(value: i128) -> Self {
         // Convert from i64 with 8 decimal places to Decimal
         // Example: 12345678 -> 0.12345678
+
         Money(Decimal::new(value, 8))
     }
 }
@@ -23,12 +24,12 @@ impl ToSql for Money {
         // Example: 0.12345678 -> 12345678
         let scaled = self.0 * Decimal::new(100000000, 0);
 
-        match scaled.to_i64() {
+        match scaled.to_i128() {
             Some(value) => Ok(rusqlite::types::ToSqlOutput::from(value)),
             None => Err(rusqlite::Error::ToSqlConversionFailure(Box::new(
                 std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
-                    "Cannot convert decimal to i64",
+                    "Cannot convert decimal to i128",
                 ),
             ))),
         }
@@ -37,7 +38,7 @@ impl ToSql for Money {
 
 impl FromSql for Money {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        let val = i64::column_result(value)?;
+        let val = i128::column_result(value)?;
         Ok(Money::from(val))
     }
 }
@@ -187,7 +188,7 @@ mod tests {
             .unwrap();
         let money_iter = stmt
             .query_map([], |row| {
-                let value: i64 = row.get(0)?;
+                let value: i128 = row.get(0)?;
                 Ok(Money::from(value))
             })
             .unwrap();
@@ -234,7 +235,7 @@ mod tests {
             .unwrap();
         let money_iter = stmt
             .query_map([], |row| {
-                let value: i64 = row.get(0)?;
+                let value: i128 = row.get(0)?;
                 Ok(Money::from(value))
             })
             .unwrap();

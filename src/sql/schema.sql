@@ -76,7 +76,7 @@ CREATE TABLE journal_entry_lines (
     account_id INTEGER NOT NULL,
     asset_id INTEGER NOT NULL,
     entry_type TEXT CHECK(entry_type IN ('DEBIT', 'CREDIT')) NOT NULL,
-    amount INTEGER NOT NULL,
+    amount BLOB NOT NULL,
     description TEXT,
     FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id),
     FOREIGN KEY (account_id) REFERENCES accounts(id),
