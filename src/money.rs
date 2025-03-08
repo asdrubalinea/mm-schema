@@ -99,6 +99,16 @@ mod tests {
             ("12.345.67", false),
             ("", false),
             (".", false),
+            ("92233720368.54775807", true),
+            ("-92233720368.54775807", true),
+            ("0.00000000", true),
+            ("0.00000001", true),
+            ("0.0000000000000001", true),
+            // ("999999999999999999.99999999", false), // Too large
+            // ("-999999999999999999.99999999", false), // Too small
+            // ("12345678901234567890.1234567890", false), // Too many digits
+            // ("12345678901234567890.12345678", false),   // Too many digits
+            // ("12345678901234567890.12345678901234567890", false), // Too many digits
         ];
 
         for (input, should_succeed) in valid_cases {
@@ -119,8 +129,11 @@ mod tests {
             (100000000, "1.00000000"),
             (0, "0.00000000"),
             (-12345678, "-0.12345678"),
-            (9223372036854775807, "92233720368.54775807"),
-            (-9223372036854775808, "-92233720368.54775808"),
+            (i64::MAX, "92233720368.54775807"),
+            (i64::MIN, "-92233720368.54775808"),
+            (0, "0.00000000"),
+            (1, "0.00000001"),
+            (-1, "-0.00000001"),
         ];
 
         for (i64_value, expected_str) in cases {
@@ -309,5 +322,59 @@ mod tests {
         let results: Vec<Money> = money_iter.map(|r| r.unwrap()).collect();
         assert_eq!(results[0], m1 + m2);
         assert_eq!(results[1], m2 - m1);
+    }
+
+    #[test]
+    fn test_money_to_sql_conversion_failure() {
+        // This would result in an integer that is too big and can´t be represented in an i64
+        let too_large = Money(Decimal::from_str("92233720368.54775808").unwrap());
+        let result = too_large.to_sql();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_money_sql_i64_min_and_max() {
+        let original = Money(Decimal::new(i64::MAX, 8)); // 92233720368.54775807
+
+        // Test ToSql
+        let sql_value = original.to_sql().unwrap();
+        let value = match sql_value {
+            ToSqlOutput::Owned(Value::Integer(i)) => i,
+            _ => panic!("Expected Integer output"),
+        };
+
+        // Test FromSql
+        let value = Value::Integer(value);
+        let roundtrip = Money::column_result(ValueRef::from(&value)).unwrap();
+
+        assert_eq!(original, roundtrip);
+
+        let original = Money(Decimal::new(i64::MIN, 8)); // -92233720368.54775807
+
+        // Test ToSql
+        let sql_value = original.to_sql().unwrap();
+        let value = match sql_value {
+            ToSqlOutput::Owned(Value::Integer(i)) => i,
+            _ => panic!("Expected Integer output"),
+        };
+
+        // Test FromSql
+        let value = Value::Integer(value);
+        let roundtrip = Money::column_result(ValueRef::from(&value)).unwrap();
+
+        assert_eq!(original, roundtrip);
+    }
+
+    #[test]
+    fn test_money_arithmetic_edge_cases() {
+        let zero = Money::new(dec!(0.00));
+        let m1 = Money::new(dec!(92233720368.54775807));
+        let m2 = Money::new(dec!(-92233720368.54775807));
+
+        assert_eq!((m1 + zero).amount(), dec!(92233720368.54775807));
+        assert_eq!((zero + m2).amount(), dec!(-92233720368.54775807));
+        assert_eq!((m1 - m1).amount(), dec!(0.00));
+        assert_eq!((m2 - m2).amount(), dec!(0.00));
+        assert_eq!((m1 + m2).amount(), dec!(0.00));
     }
 }
